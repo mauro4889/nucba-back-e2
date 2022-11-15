@@ -26,7 +26,7 @@ export class UserController {
 
     public static async update(req: Request, res: Response) {
         const { ID } = req.params
-        const update = await UserService.updateUser(ID, req.body)
+        const update = await UserService.update(ID, req.body)
 
         res.status(update.success ? 200 : 400).send(update)
     }

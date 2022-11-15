@@ -1,4 +1,5 @@
 import { prisma } from "..";
+import { UserService } from "./user.service";
 
 
 export class BillsService {
@@ -39,7 +40,7 @@ export class BillsService {
         }
     }
 
-    public static async getOneById(id: number) {
+    public static async getOneById(id: any) {
         try {
             const data = await prisma.bills.findUnique({ where: { id } });
             return { success: true, data };
@@ -51,19 +52,22 @@ export class BillsService {
 
     public static async update(id: number, data: any) {
         try {
-            console.log(id)
             const bill = await this.getOneById(id)
+            const userId =  bill.data?.userId
+            
             if (!bill) {
                 throw Error()
             }
-            if(data.price >= 0){
-                this.restBill(bill.data?.userId, bill.data?.price)
-                this.addBill(bill.data?.userId, bill.data?.price)
-            }
+
             const modified = await prisma.bills.update({
                 where: { id },
                 data: { ...data },
             })
+
+            if(data.price){
+                await this.updateTotalBills(userId)
+            }
+            
             return { success: true, modified }
         }
         catch (error) {
@@ -75,7 +79,7 @@ export class BillsService {
     public static async delete(id: any) {
         try {
             const bill = await this.getOneById(id)
-            const restBill = await this.restBill(bill.data?.userId, bill.data?.price)
+            await this.restBill(bill.data?.userId, bill.data?.price)
             const deleteBill = await prisma.bills.delete({ where: { id }})
             return { success: true, deleteBill };
         } catch (error) {
@@ -115,6 +119,19 @@ export class BillsService {
             return { success: true, modified }
         }
         catch (error) {
+            console.log({ error });
+            return { success: false, error: 'Hubo un error' };
+        }
+    }
+
+    public static async updateTotalBills(id: any){
+        try {
+            const user = await UserService.getOneById(id)
+            const bills = user.data?.bills
+            let reduce = bills?.reduce((acumulator, bill)=> acumulator + bill.price, 0)
+            await UserService.updateTotalBill(user.data?.id, reduce)
+            return { success: true}
+        } catch (error) {
             console.log({ error });
             return { success: false, error: 'Hubo un error' };
         }

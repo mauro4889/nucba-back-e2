@@ -34,7 +34,7 @@ export class UserService {
 
     public static async getOneById(id: any) {
         try {
-            const data = await prisma.user.findUnique({ where: { id } });
+            const data = await prisma.user.findUnique({ where: { id }, include:{bills: true} });
             return { success: true, data };
         } catch (error) {
             console.log({ error });
@@ -42,7 +42,7 @@ export class UserService {
         }
     }
 
-    public static async updateUser(id: any, data: any) {
+    public static async update(id: any, data: any) {
         try {
             const user = this.getOneById(id)
             if (!user) {
@@ -70,4 +70,19 @@ export class UserService {
         }
     }
 
+    static async updateTotalBill(id:any, totalBills:any){
+        try {
+            const user = this.getOneById(id)
+            if (!user) {
+                throw Error()
+            }
+            const modified = await prisma.user.update({
+                where: { id },
+                data: { totalBills },
+            })
+            return { success: true, modified }
+        } catch (error) {
+            
+        }
+    }
 }
